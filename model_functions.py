@@ -233,6 +233,54 @@ def self_timed_movement_task(T_start, T_cue, T_wait, T_movement, T):
 def get_response_times(all_ys, exclude_nan=True):
     response_times = jnp.full((cs.n_seeds, all_ys.shape[1]), jnp.nan)  # Default to NaN if no response is detected
 
+#function to align trials to cue for plotting
+def align_to_cue(data, cue_start, new_T=50):
+    """
+    align data to the cue
+    data: shape (n_conditions, T, N) or (n_conditions, T)
+    cue_start: shape (n_conditions,)
+    return: shape (n_conditions, new_T, N) or (n_conditions, new_T)
+    """
+    n_conditions = data.shape[0]
+    T = data.shape[1]
+    new_data = []
+
+    for i, t in enumerate(cue_start):
+        ind_range = jnp.arange(T)
+        mask = (ind_range >= t) & (ind_range < t + new_T)
+        new_data.append(data[i, mask])
+
+    return jnp.stack(new_data)
+
+#querys the array corresponding to the right brain area from the output
+def get_brain_area_(brain_area, xs=None, zs=None):
+    if brain_area == 'BG' or brain_area == 'Striatum':
+        return jnp.concatenate((get_brain_area('D1', xs, zs), get_brain_area('D2', xs, zs)), axis=0)
+    elif brain_area == 'Cortex':
+        return xs[1]
+    elif brain_area == 'Thalamus':
+        return xs[2]
+    elif brain_area == 'SNc':
+        return zs
+    elif brain_area == 'All':
+        return jnp.concatenate((xs[0], xs[1], xs[2], zs), axis=0)
+    elif brain_area == 'D1':
+        return xs[0][:, :, :n_d1_cells]
+    elif brain_area == 'D2':
+        return xs[0][:, :, n_d1_cells:]
+    elif brain_area == 'nm':
+        return jax.nn.sigmoid(nln(zs) @ exc(params['m'].T) + params['c'])
+    else:
+        raise ValueError('Invalid brain area')
+
+#nonlinear transformation of output data to normalize
+def get_brain_area(brain_area, xs=None, zs=None):
+    return jnp.tanh(get_brain_area_(brain_area, xs, zs))
+
+#calculate the sem for plotting
+def sem(data, axis=0):
+    return jnp.std(data, axis=axis) / jnp.sqrt(data.shape[axis] - 1)
+
 def test_model(params_nm):
     all_inputs, all_outputs, all_masks = self_timed_movement_task(
     cs.test_start_t, cs.config['T_cue'], cs.config['T_wait'], cs.config['T_movement'], cs.config['T']
@@ -260,4 +308,8 @@ def test_model(params_nm):
     
     return all_ys, all_xs, all_zs
 
-# add remaining relevant functions
+# Helper function to calculate mean ± SEM
+def compute_mean_sem(data):
+    return jnp.mean(data, axis=0), sem(data, axis=0)
+
+
