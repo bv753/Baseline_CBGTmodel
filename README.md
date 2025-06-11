@@ -1,1 +1,3 @@
-# Initial_CBGTmodel
+Initial_CBGTmodel
+
+Copy of Google Colab Version
