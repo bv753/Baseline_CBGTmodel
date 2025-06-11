@@ -3,7 +3,7 @@ import jax.random as jr
 import jax.numpy as jnp
 import math
 
-from jax import vmap
+from jax import vmap, jit
 from jax import lax
 import optax
 import config_script as cs
