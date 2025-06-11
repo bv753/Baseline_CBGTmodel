@@ -119,3 +119,8 @@ params = init_params(
     config['g_bg'], config['g_nm'],
     config['U'], config['O']
 )
+
+# test parameters
+n_seeds = 40
+test_noise_std = 0.2
+test_start_t = jnp.arange(0, 10, 2)
