@@ -127,7 +127,7 @@ def plot_response_times(valid_response_times):
     plt.show()
 
 def plot_binned_responses(all_ys, all_xs, all_zs):
-    response_times = jnp.full((cs.n_seeds, all_ys.shape[1]), jnp.nan)  # Default to NaN if no response is detected
+    response_times = jnp.full((cs.n_seeds, all_ys.shape[1]), jnp.nan)  # Default to NaN if no response is detected  # TODO: remove double code -> see mf.get_response_times()
 
     for seed_idx in range(cs.n_seeds):
         for condition_idx in range(all_ys.shape[1]):
