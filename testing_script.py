@@ -1,8 +1,8 @@
 import model_functions as mf
 import plotting_functions as pf
-import training_script as ts
+import training_script as trs
 
-all_ys, all_xs, all_zs = mf.test_model(ts.params_nm)
+all_ys, all_xs, all_zs = mf.test_model(trs.params_nm)
 
 pf.plot_output(all_ys)
 pf.plot_activity_by_area(all_xs, all_zs)

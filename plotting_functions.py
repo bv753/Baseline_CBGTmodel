@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import jax.numpy as jnp
 import numpy as np
 import config_script as cs
 import model_functions as mf
@@ -22,7 +23,7 @@ def plot_output(all_ys):
     # plt.close('all')
     fig = plt.figure(figsize=(4, 3))
     colors = plt.cm.coolwarm(jnp.linspace(0, 1, all_ys.shape[1]))
-    mean_ys, sem_ys = compute_mean_sem(all_ys)
+    mean_ys, sem_ys = mf.compute_mean_sem(all_ys)
     
     for i in range(mean_ys.shape[0]):
         plt.plot(mean_ys[i, :, 0], c=colors[i])
@@ -33,7 +34,7 @@ def plot_output(all_ys):
             color=colors[i],
             alpha=0.3,
         )
-    plt.title(f'Output (mean ± SEM, noise_std={test_noise_std})')
+    plt.title(f'Output (mean ± SEM, noise_std={cs.test_noise_std})')
     plt.legend()
     plt.tight_layout()
     plt.show()
@@ -44,9 +45,9 @@ def plot_activity_by_area(all_xs, all_zs):
     for idx, name in enumerate(['D1', 'D2', 'Cortex', 'Thalamus', 'SNc', 'nm']):
         ax = plt.subplot(2, 3, idx + 1)
         area_activity = jnp.stack(
-            [get_brain_area(name, xs_seed, zs_seed) for xs_seed, zs_seed in zip(all_xs, all_zs)]
+            [mf.get_brain_area(name, xs_seed, zs_seed) for xs_seed, zs_seed in zip(all_xs, all_zs)]
         )  # shape: (n_seeds, n_conditions, T, N)
-        mean_act, sem_act = compute_mean_sem(jnp.mean(area_activity, axis=3))  # Avg across neurons
+        mean_act, sem_act = mf.compute_mean_sem(jnp.mean(area_activity, axis=3))  # Avg across neurons
         colors = plt.cm.coolwarm(jnp.linspace(0, 1, mean_act.shape[0]))
         for i in range(mean_act.shape[0]):
             ax.plot(mean_act[i], c=colors[i], label=f'Condition {i}')
@@ -68,12 +69,12 @@ def plot_cue_align_activity(all_xs, all_zs):
     for idx, name in enumerate(['D1', 'D2', 'Cortex', 'Thalamus', 'SNc', 'nm']):
         ax = plt.subplot(2, 3, idx + 1)
         area_activity = jnp.stack(
-            [get_brain_area(name, xs_seed, zs_seed) for xs_seed, zs_seed in zip(all_xs, all_zs)]
+            [mf.get_brain_area(name, xs_seed, zs_seed) for xs_seed, zs_seed in zip(all_xs, all_zs)]
         ) # (n_seeds, n_conditions, T, N)
         area_activity = jnp.stack(
-            [align_to_cue(area_activity_seed, test_start_t, new_T=50) for area_activity_seed in area_activity]
+            [mf.align_to_cue(area_activity_seed, cs.test_start_t, new_T=50) for area_activity_seed in area_activity]
         )
-        mean_act, sem_act = compute_mean_sem(jnp.mean(area_activity, axis=3)) # (n_conditions, T)
+        mean_act, sem_act = mf.compute_mean_sem(jnp.mean(area_activity, axis=3)) # (n_conditions, T)
         colors = plt.cm.coolwarm(jnp.linspace(0, 1, mean_act.shape[0]))
         for i in range(mean_act.shape[0]):
             ax.plot(mean_act[i], c=colors[i], label=f'Condition {i}')
@@ -86,10 +87,10 @@ def plot_cue_align_activity(all_xs, all_zs):
             )
         ymin = jnp.min(mean_act - sem_act)
         ymax = jnp.max(mean_act + sem_act)
-        ax.vlines(config['T_cue'], ymin, ymax, linestyles='dashed', label='Cue')
-        ax.vlines(config['T_cue'] + config['T_wait'], ymin, ymax, linestyles='dashed', label='Wait')
+        ax.vlines(cs.config['T_cue'], ymin, ymax, linestyles='dashed', label='Cue')
+        ax.vlines(cs.config['T_cue'] + cs.config['T_wait'], ymin, ymax, linestyles='dashed', label='Wait')
         ax.vlines(
-            config['T_cue'] + config['T_wait'] + config['T_movement'],
+            cs.config['T_cue'] + cs.config['T_wait'] + cs.config['T_movement'],
             ymin,
             ymax,
             linestyles='dashed',
@@ -125,7 +126,17 @@ def plot_response_times(valid_response_times):
     plt.tight_layout()
     plt.show()
 
-def plot_binned_responses(all_ys_all_xs, all_zs):
+def plot_binned_responses(all_ys, all_xs, all_zs):
+    response_times = jnp.full((cs.n_seeds, all_ys.shape[1]), jnp.nan)  # Default to NaN if no response is detected
+
+    for seed_idx in range(cs.n_seeds):
+        for condition_idx in range(all_ys.shape[1]):
+            cue_end = cs.test_start_t[condition_idx] + cs.config['T_cue']
+            post_cue_activity = all_ys[seed_idx, condition_idx, cue_end:]  # Activity after the cue
+            response_idx = jnp.argmax(post_cue_activity[:, 0] > 0.5)  # Find first timestep where y > 0.5
+            if post_cue_activity[response_idx, 0] > 0.5:
+                response_times = response_times.at[seed_idx, condition_idx].set((response_idx) * 0.1)
+
     # Define the response time bins (left closed, right open)
     bin_boundaries = [1.6, 2.0, 2.2, 2.4, 2.8]
     bin_labels = [f'{bin_boundaries[i]}-{bin_boundaries[i+1]}' for i in range(len(bin_boundaries) - 1)]
@@ -137,12 +148,12 @@ def plot_binned_responses(all_ys_all_xs, all_zs):
     binned_response_times = [[] for _ in bin_labels]
     
     # Assign each trial to a bin based on its response time
-    for seed_idx in range(n_seeds):
+    for seed_idx in range(cs.n_seeds):
     
-        aligned_xs = [align_to_cue(all_x[seed_idx], test_start_t, new_T=50) for all_x in all_xs]
-        aligned_zs = align_to_cue(all_zs[seed_idx], test_start_t, new_T=50)
-        aligned_ys = align_to_cue(all_ys[seed_idx], test_start_t, new_T=50)
-    
+        aligned_xs = [mf.align_to_cue(all_x[seed_idx], cs.test_start_t, new_T=50) for all_x in all_xs]
+        aligned_zs = mf.align_to_cue(all_zs[seed_idx], cs.test_start_t, new_T=50)
+        aligned_ys = mf.align_to_cue(all_ys[seed_idx], cs.test_start_t, new_T=50)
+
         for condition_idx in range(all_ys.shape[1]):
             response_time = response_times[seed_idx, condition_idx]
     
@@ -175,7 +186,7 @@ def plot_binned_responses(all_ys_all_xs, all_zs):
             continue
     
         # Compute mean and SEM for the current bin
-        mean_ys, sem_ys = compute_mean_sem(bin_data)  # Compute mean and SEM across trials
+        mean_ys, sem_ys = mf.compute_mean_sem(bin_data)  # Compute mean and SEM across trials
     
         # Plot each bin with mean ± SEM
         ax = plt.subplot(1, 1, 1)  # Plot on a single axis
@@ -191,7 +202,7 @@ def plot_binned_responses(all_ys_all_xs, all_zs):
             alpha=0.3,
         )
     
-    ax.set_title(f'Output Activity (mean ± SEM, noise_std={test_noise_std})')
+    ax.set_title(f'Output Activity (mean ± SEM, noise_std={cs.test_noise_std})')
     ax.set_xlabel('Time after cue onset')
     ax.set_ylabel('Activity')
     ax.legend(title="Response Time")
@@ -216,13 +227,13 @@ def plot_binned_responses(all_ys_all_xs, all_zs):
                 aligned_zs = binned_zs[bin_idx]
     
                 # Get the brain area activity (aligning to the cue)
-                area_activity = get_brain_area(name, aligned_xs, aligned_zs) # trials * T * N
+                area_activity = mf.get_brain_area(name, aligned_xs, aligned_zs) # trials * T * N
     
                 # Compute mean and SEM for the current bin
                 mean_area_activity = jnp.mean(area_activity, axis=-1) # trials * T
     
                 # Plot each bin with mean ± SEM
-                mean_act, sem_act = compute_mean_sem(mean_area_activity) # T
+                mean_act, sem_act = mf.compute_mean_sem(mean_area_activity) # T
                 x_axis = jnp.array(range(mean_act.shape[0]))
                 ax.plot(x_axis, mean_act, label=f'{bin_labels[bin_idx]}', c=plt.cm.coolwarm(bin_idx / len(bin_labels)))
                 ax.fill_between(
@@ -237,10 +248,10 @@ def plot_binned_responses(all_ys_all_xs, all_zs):
         # Add vertical lines for cue, wait, and movement phases
         ymin = jnp.min(mean_act - sem_act)
         ymax = jnp.max(mean_act + sem_act)
-        ax.vlines(config['T_cue'], ymin, ymax, linestyles='dashed')
-        ax.vlines(config['T_cue'] + config['T_wait'], ymin, ymax, linestyles='dashed')
+        ax.vlines(cs.config['T_cue'], ymin, ymax, linestyles='dashed')
+        ax.vlines(cs.config['T_cue'] + cs.config['T_wait'], ymin, ymax, linestyles='dashed')
         ax.vlines(
-            config['T_cue'] + config['T_wait'] + config['T_movement'],
+            cs.config['T_cue'] + cs.config['T_wait'] + cs.config['T_movement'],
             ymin,
             ymax,
             linestyles='dashed',

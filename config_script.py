@@ -99,6 +99,10 @@ config = default_config
 # set up the random key
 key = jr.PRNGKey(config['keyind'])
 
+# number of D1 and D2 cells in BG
+n_d1_cells = config['n_bg'] // 2
+n_d2_cells = config['n_bg'] - n_d1_cells
+
 # define a simple optimizer
 # optimizer = optax.adam(learning_rate=1e-3)
 optimizer = optax.chain(

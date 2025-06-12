@@ -185,8 +185,8 @@ def fit_nm_rnn(inputs, targets, loss_masks, params, optimizer, x0, z0, num_iters
         )
         losses.append(loss_values)
         print(f'step {(n + 1) * log_interval}, loss: {loss_values[-1]}')
-        if wandb_log:
-            wandb.log({'loss': loss_values[-1]})
+        #if wandb_log:
+        #    wandb.log({'loss': loss_values[-1]})
         if loss_values[-1] < best_loss:
             best_params = params
             best_loss = loss_values[-1]
@@ -234,6 +234,22 @@ def self_timed_movement_task(T_start, T_cue, T_wait, T_movement, T):
 def get_response_times(all_ys, exclude_nan=True):
     response_times = jnp.full((cs.n_seeds, all_ys.shape[1]), jnp.nan)  # Default to NaN if no response is detected
 
+    for seed_idx in range(cs.n_seeds):
+        for condition_idx in range(all_ys.shape[1]):
+            cue_end = cs.test_start_t[condition_idx] + cs.config['T_cue']
+            post_cue_activity = all_ys[seed_idx, condition_idx, cue_end:]  # Activity after the cue
+            response_idx = jnp.argmax(post_cue_activity[:, 0] > 0.5)  # Find first timestep where y > 0.5
+            if post_cue_activity[response_idx, 0] > 0.5:
+                response_times = response_times.at[seed_idx, condition_idx].set((response_idx) * 0.1)
+
+    # Flatten the response_times array, excluding NaN values
+    if exclude_nan:
+        valid_response_times = response_times[~jnp.isnan(response_times)].flatten()
+    else:
+        #replace NaN with T
+        valid_response_times = response_times#.flatten()
+    return valid_response_times
+
 #function to align trials to cue for plotting
 def align_to_cue(data, cue_start, new_T=50):
     """
@@ -266,11 +282,11 @@ def get_brain_area_(brain_area, xs=None, zs=None):
     elif brain_area == 'All':
         return jnp.concatenate((xs[0], xs[1], xs[2], zs), axis=0)
     elif brain_area == 'D1':
-        return xs[0][:, :, :n_d1_cells]
+        return xs[0][:, :, :cs.n_d1_cells]
     elif brain_area == 'D2':
-        return xs[0][:, :, n_d1_cells:]
+        return xs[0][:, :, cs.n_d1_cells:]
     elif brain_area == 'nm':
-        return jax.nn.sigmoid(nln(zs) @ exc(params['m'].T) + params['c'])
+        return jax.nn.sigmoid(nln(zs) @ exc(cs.params['m'].T) + cs.params['c'])
     else:
         raise ValueError('Invalid brain area')
 
