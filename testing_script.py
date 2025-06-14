@@ -4,6 +4,9 @@ import training_script as trs
 
 all_ys, all_xs, all_zs = mf.test_model(trs.params_nm)
 
+# TODO: calculate loss after testing
+# use mf.batched_nm_rnn_loss
+
 pf.plot_output(all_ys)
 pf.plot_activity_by_area(all_xs, all_zs)
 pf.plot_cue_align_activity(all_xs, all_zs)
