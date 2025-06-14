@@ -201,11 +201,22 @@ def plot_binned_responses(all_ys, all_xs, all_zs):
             color=plt.cm.coolwarm(bin_idx / len(bin_labels)),
             alpha=0.3,
         )
-    
-    ax.set_title(f'Output Activity (mean ± SEM, noise_std={cs.test_noise_std})')
-    ax.set_xlabel('Time after cue onset')
-    ax.set_ylabel('Activity')
-    ax.legend(title="Response Time")
+
+    y_min = jnp.min(mean_ys - sem_ys)  # TODO: optimize code, show individual mean movement times for each response bin
+    y_max = jnp.max(mean_ys + sem_ys)
+    ax.vlines(cs.config['T_cue']/10, y_min, y_max, linestyles='dashed')
+    ax.vlines((cs.config['T_cue'] + cs.config['T_wait'])/10, y_min, y_max, linestyles='dashed')
+    ax.vlines(
+        (cs.config['T_cue'] + cs.config['T_wait'] + cs.config['T_movement'])/10,
+        y_min,
+        y_max,
+        linestyles='dashed',
+    )
+
+    ax.set_title(f'Output activity (mean ± SEM, noise_std={cs.test_noise_std})')
+    ax.set_xlabel('Time (ms)')
+    ax.set_ylabel('Relative activity')
+    ax.legend(title="Response time")
     plt.tight_layout()
     plt.show()
 
