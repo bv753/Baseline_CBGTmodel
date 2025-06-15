@@ -90,7 +90,7 @@ default_config = dict(
     # Training
     num_nm_only_iters = 0,
     num_full_train_iters = 3000,
-    keyind = 13,
+    keyind = 99,
 )
 
 # declare the config
