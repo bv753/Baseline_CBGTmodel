@@ -26,7 +26,7 @@ def plot_output(all_ys):
     mean_ys, sem_ys = mf.compute_mean_sem(all_ys)
     
     for i in range(mean_ys.shape[0]):
-        plt.plot(mean_ys[i, :, 0], c=colors[i])
+        plt.plot(mean_ys[i, :, 0], label=f'{i+1}', c=colors[i])
         plt.fill_between(
             jnp.arange(mean_ys.shape[1]),
             mean_ys[i, :, 0] - sem_ys[i, :, 0],
@@ -35,7 +35,7 @@ def plot_output(all_ys):
             alpha=0.3,
         )
     plt.title(f'Output (mean ± SEM, noise_std={cs.test_noise_std})')
-    plt.legend()
+    plt.legend(title="Condition")
     plt.tight_layout()
     plt.show()
 
@@ -127,15 +127,7 @@ def plot_response_times(valid_response_times):
     plt.show()
 
 def plot_binned_responses(all_ys, all_xs, all_zs):
-    response_times = jnp.full((cs.n_seeds, all_ys.shape[1]), jnp.nan)  # Default to NaN if no response is detected  # TODO: remove double code -> see mf.get_response_times()
-
-    for seed_idx in range(cs.n_seeds):
-        for condition_idx in range(all_ys.shape[1]):
-            cue_end = cs.test_start_t[condition_idx] + cs.config['T_cue']
-            post_cue_activity = all_ys[seed_idx, condition_idx, cue_end:]  # Activity after the cue
-            response_idx = jnp.argmax(post_cue_activity[:, 0] > 0.5)  # Find first timestep where y > 0.5
-            if post_cue_activity[response_idx, 0] > 0.5:
-                response_times = response_times.at[seed_idx, condition_idx].set((response_idx) * 0.1)
+    response_times = mf.get_response_times(all_ys, exclude_nan=False)  # only works with unflattened response_times array
 
     # Define the response time bins (left closed, right open)
     bin_boundaries = [1.6, 2.0, 2.2, 2.4, 2.8]
