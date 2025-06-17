@@ -127,7 +127,7 @@ def plot_response_times(valid_response_times):
     plt.show()
 
 def plot_binned_responses(all_ys, all_xs, all_zs):
-    response_times = mf.get_response_times(all_ys, exclude_nan=False)  # only works with unflattened response_times array
+    response_times = mf.get_response_times(all_ys, exclude_nan=False)  #  requires unflattened mf.get_response_times() output
 
     # Define the response time bins (left closed, right open)
     bin_boundaries = [1.6, 2.0, 2.2, 2.4, 2.8]
