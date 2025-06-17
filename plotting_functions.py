@@ -194,7 +194,7 @@ def plot_binned_responses(all_ys, all_xs, all_zs):
             alpha=0.3,
         )
 
-    y_min = jnp.min(mean_ys - sem_ys)  # TODO: optimize code, show individual mean movement times for each response bin
+    y_min = jnp.min(mean_ys - sem_ys)
     y_max = jnp.max(mean_ys + sem_ys)
     ax.vlines(cs.config['T_cue']/10, y_min, y_max, linestyles='dashed')
     ax.vlines((cs.config['T_cue'] + cs.config['T_wait'])/10, y_min, y_max, linestyles='dashed')
