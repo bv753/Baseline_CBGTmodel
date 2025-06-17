@@ -1,9 +1,8 @@
+import jax.numpy as jnp
 import config_script as cs
 import model_functions as mf
 import plotting_functions as pf
 import training_script as trs
-
-import jax.numpy as jnp
 
 all_ys, all_xs, all_zs = mf.test_model(trs.params_nm)
 
