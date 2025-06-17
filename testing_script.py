@@ -7,9 +7,9 @@ import jax.numpy as jnp
 
 all_ys, all_xs, all_zs = mf.test_model(trs.params_nm)
 
+# calculate testing loss
 mean_ys = jnp.mean(all_ys, 0)  # mean over random seed iterations
 tst_inputs, tst_outputs, tst_masks = mf.self_timed_movement_task(cs.test_start_t, cs.config['T_cue'], cs.config['T_wait'], cs.config['T_movement'], cs.config['T'])
-
 testing_loss = jnp.sum(((mean_ys - tst_outputs) ** 2) * tst_masks) / jnp.sum(tst_masks)
 print("Testing loss:", testing_loss)
 
