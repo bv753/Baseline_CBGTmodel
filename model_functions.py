@@ -209,8 +209,10 @@ def self_timed_movement_task(T_start, T_cue, T_wait, T_movement, T, null_trial=F
     outputs: (num_starts, T, 1), representing the desired movement
     mask: (num_starts, T, 1), the loss mask
     """
+    T_start = T_start + 1
     if null_trial is True:
-        t_start_def = jnp.concatenate((T_start, jnp.zeros(jnp.shape(T_start))), dtype=int)
+        # t_start_def = jnp.concatenate((T_start, jnp.zeros(jnp.shape(T_start))), dtype=int)
+        t_start_def = jnp.insert(T_start, jr.randint(jr.PRNGKey(4), (10,), 0, 10), 0)
     else:
         t_start_def = T_start
     print(t_start_def)
@@ -239,14 +241,12 @@ def self_timed_movement_task(T_start, T_cue, T_wait, T_movement, T, null_trial=F
     outputs = jnp.empty((0, T, 1))
     masks = jnp.ones((num_starts, T, 1))
 
-    first_0 = True
     for value in t_start_def:
-        if value == 0 and first_0 is False:
+        if value == 0:
             input = jnp.zeros((1, T, 1))
             output = jnp.zeros((1, T, 1))
         else:
             input, output, mask = _single(value)
-            first_0 = False
 
         inputs = jnp.append(inputs, input, 0)
         outputs = jnp.append(outputs, output, 0)
