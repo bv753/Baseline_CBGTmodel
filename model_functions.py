@@ -224,17 +224,31 @@ def self_timed_movement_task(T_start, T_cue, T_wait, T_movement, T, null_trial=F
         t_movement_end = t_wait_end + T_movement
 
         # Initialize zero arrays for inputs, outputs, and masks
-        inputs = jnp.zeros((T, 1))
-        outputs = jnp.zeros((T, 1))
-        mask = jnp.ones((T, 1))
+        inputs = jnp.zeros((1, T, 1))
+        outputs = jnp.zeros((1, T, 1))
+        mask = jnp.ones((1, T, 1))
 
         # Dynamically update the slices
-        inputs = jax.lax.dynamic_update_slice(inputs, jnp.ones((T_cue, 1)), (t_start, 0))
-        outputs = jax.lax.dynamic_update_slice(outputs, jnp.ones((T_movement, 1)), (t_wait_end, 0))
+        inputs = jax.lax.dynamic_update_slice(inputs, jnp.ones((1, T_cue, 1)), (0, t_start, 0))
+        outputs = jax.lax.dynamic_update_slice(outputs, jnp.ones((1, T_movement, 1)), (0, t_wait_end, 0))
 
         return inputs, outputs, mask
 
-    inputs, outputs, masks = vmap(_single)(jnp.arange(num_starts))
+
+    # simple solution null_trials
+    inputs = jnp.zeros((1, T, 1))
+    outputs = jnp.zeros((1, T, 1))
+    masks = jnp.ones((1, T, 1))
+
+
+
+    for trial in jnp.arange(num_starts):
+        input, output, mask = _single(trial)
+
+        inputs = jnp.append(inputs, input, 0)
+        outputs = jnp.append(outputs, output, 0)
+
+    #inputs, outputs, masks = vmap(_single)(jnp.arange(num_starts))
     return inputs, outputs, masks
 
 def get_response_times(all_ys, exclude_nan=True):
