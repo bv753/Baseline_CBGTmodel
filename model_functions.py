@@ -236,14 +236,18 @@ def self_timed_movement_task(T_start, T_cue, T_wait, T_movement, T, null_trial=F
 
 
     # simple solution null_trials
-    inputs = jnp.zeros((1, T, 1))
-    outputs = jnp.zeros((1, T, 1))
-    masks = jnp.ones((1, T, 1))
+    inputs = jnp.empty((0, T, 1))
+    outputs = jnp.empty((0, T, 1))
+    masks = jnp.ones((num_starts, T, 1))
 
-
-
-    for trial in jnp.arange(num_starts):
-        input, output, mask = _single(trial)
+    first_0 = True
+    for value in t_start_def:
+        if value == 0 and first_0 is False:
+            input = jnp.zeros((1, T, 1))
+            output = jnp.zeros((1, T, 1))
+        else:
+            input, output, mask = _single(value)
+            first_0 = False
 
         inputs = jnp.append(inputs, input, 0)
         outputs = jnp.append(outputs, output, 0)
