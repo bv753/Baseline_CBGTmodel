@@ -193,7 +193,7 @@ def fit_nm_rnn(inputs, targets, loss_masks, params, optimizer, x0, z0, num_iters
 
     return best_params, losses
 
-def self_timed_movement_task(T_start, T_cue, T_wait, T_movement, T):
+def self_timed_movement_task(T_start, T_cue, T_wait, T_movement, T, null_trial=False):
     """
     Simulate all possible input/output pairs for the self-timed movement task.
 
