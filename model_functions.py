@@ -212,15 +212,15 @@ def self_timed_movement_task(T_start, T_cue, T_wait, T_movement, T, null_trial=F
     T_start = T_start + 1
     if null_trial is True:
         # t_start_def = jnp.concatenate((T_start, jnp.zeros(jnp.shape(T_start))), dtype=int)
-        t_start_def = jnp.insert(T_start, jr.randint(jr.PRNGKey(4), (10,), 0, 10), 0)
+        t_start_def = jnp.insert(T_start, jr.randint(jr.PRNGKey(0), (10,), 0, 10), 0)
     else:
         t_start_def = T_start
-    print(t_start_def)
+    print("Start times ('0' indicates null-trials):", t_start_def)
 
     num_starts = t_start_def.shape[0]
 
     def _single(interval_ind):
-        t_start = t_start_def[interval_ind]
+        t_start = T_start[interval_ind - 1] - 1  # needs array without null-values; solve better generally -> other solution for distinction between 0 and null-trial
         t_cue_end = t_start + T_cue
         t_wait_end = t_cue_end + T_wait
         t_movement_end = t_wait_end + T_movement
@@ -250,6 +250,9 @@ def self_timed_movement_task(T_start, T_cue, T_wait, T_movement, T, null_trial=F
 
         inputs = jnp.append(inputs, input, 0)
         outputs = jnp.append(outputs, output, 0)
+
+    null_indices = jnp.array(jnp.where(t_start_def == 0), )[0]
+    print("Null-trial indices:", null_indices)
 
     #inputs, outputs, masks = vmap(_single)(jnp.arange(num_starts))
     return inputs, outputs, masks
