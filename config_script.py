@@ -82,7 +82,7 @@ default_config = dict(
     # Timing (task) parameters
     dt = 10, # ms
     # Data Generation
-    T_start = jnp.arange(0, 10, 1),
+    T_start = jnp.arange(1, 11, 1),  # there should not be a trial number ß
     T_cue = 10,
     T_wait = 20,
     T_movement = 10,
@@ -90,6 +90,7 @@ default_config = dict(
     # Training
     num_nm_only_iters = 0,
     num_full_train_iters = 3000,
+    train_null_trials = False,
     keyind = 99,
 )
 
@@ -127,4 +128,5 @@ params = init_params(
 # test parameters
 n_seeds = 40
 test_noise_std = 0.2
-test_start_t = jnp.arange(0, 10, 2)
+test_start_t = jnp.arange(2, 12, 2)
+test_null_trials = False

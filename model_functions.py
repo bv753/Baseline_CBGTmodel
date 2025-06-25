@@ -251,11 +251,11 @@ def self_timed_movement_task(T_start, T_cue, T_wait, T_movement, T, null_trial=F
         inputs = jnp.append(inputs, input, 0)
         outputs = jnp.append(outputs, output, 0)
 
-    null_indices = jnp.array(jnp.where(t_start_def == 0), )[0]
-    print("Null-trial indices:", null_indices)
+    reg_indices = jnp.array(jnp.where(t_start_def != 0), )[0]
+    print("Regular trial indices:", reg_indices)
 
     #inputs, outputs, masks = vmap(_single)(jnp.arange(num_starts))
-    return inputs, outputs, masks
+    return inputs, outputs, masks, reg_indices
 
 def get_response_times(all_ys, exclude_nan=True):
     response_times = jnp.full((cs.n_seeds, all_ys.shape[1]), jnp.nan)  # Default to NaN if no response is detected
@@ -325,8 +325,8 @@ def sem(data, axis=0):
     return jnp.std(data, axis=axis) / jnp.sqrt(data.shape[axis] - 1)
 
 def test_model(params_nm):
-    all_inputs, all_outputs, all_masks = self_timed_movement_task(
-    cs.test_start_t, cs.config['T_cue'], cs.config['T_wait'], cs.config['T_movement'], cs.config['T']
+    all_inputs, all_outputs, all_masks, _ = self_timed_movement_task(
+    cs.test_start_t, cs.config['T_cue'], cs.config['T_wait'], cs.config['T_movement'], cs.config['T'], null_trial=cs.test_null_trials
     )
 
     # Collect activity for each seed
