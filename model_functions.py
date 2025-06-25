@@ -209,7 +209,7 @@ def self_timed_movement_task(T_start, T_cue, T_wait, T_movement, T, null_trial=F
     outputs: (num_starts, T, 1), representing the desired movement
     mask: (num_starts, T, 1), the loss mask
     """
-    T_start = T_start + 1
+
     if null_trial is True:
         # t_start_def = jnp.concatenate((T_start, jnp.zeros(jnp.shape(T_start))), dtype=int)
         t_start_def = jnp.insert(T_start, jr.randint(jr.PRNGKey(0), (10,), 0, 10), 0)
