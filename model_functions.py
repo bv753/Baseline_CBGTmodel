@@ -246,7 +246,7 @@ def self_timed_movement_task(T_start, T_cue, T_wait, T_movement, T, null_trial=F
             input = jnp.zeros((1, T, 1))
             output = jnp.zeros((1, T, 1))
         else:
-            input, output, mask = _single(value)
+            input, output, mask = _single(ind)
 
         inputs = jnp.append(inputs, input, 0)
         outputs = jnp.append(outputs, output, 0)
