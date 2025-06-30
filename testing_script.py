@@ -13,13 +13,12 @@ testing_loss = jnp.sum(((m_ys - tst_outputs) ** 2) * tst_masks) / jnp.sum(tst_ma
 print("Testing loss:", testing_loss)
 
 reg_ys = jnp.take(all_ys, tst_reg_indices, 1)
+reg_zs = jnp.take(all_zs, tst_reg_indices, 1)
 
 reg_xs_bg = jnp.take(all_xs[0], tst_reg_indices, 1)
 reg_xs_c = jnp.take(all_xs[1], tst_reg_indices, 1)
 reg_xs_t = jnp.take(all_xs[2], tst_reg_indices, 1)
 reg_xs = [reg_xs_bg, reg_xs_c, reg_xs_t]
-
-reg_zs = jnp.take(all_zs, tst_reg_indices, 1)
 
 pf.plot_output(reg_ys)
 pf.plot_activity_by_area(reg_xs, reg_zs)
