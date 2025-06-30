@@ -241,8 +241,8 @@ def self_timed_movement_task(T_start, T_cue, T_wait, T_movement, T, null_trial=F
     outputs = jnp.empty((0, T, 1))
     masks = jnp.ones((num_starts, T, 1))
 
-    for value in t_start_def:
-        if value == 0:
+    for ind, trial in enumerate(t_start_def):
+        if trial == 0:
             input = jnp.zeros((1, T, 1))
             output = jnp.zeros((1, T, 1))
         else:
