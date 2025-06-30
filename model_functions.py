@@ -251,7 +251,7 @@ def self_timed_movement_task(T_start, T_cue, T_wait, T_movement, T, null_trial=F
         inputs = jnp.append(inputs, input, 0)
         outputs = jnp.append(outputs, output, 0)
 
-    reg_indices = jnp.array(jnp.where(t_start_def != 0), )[0]
+    reg_indices = jnp.nonzero(t_start_def)[0]
     print("Regular trial indices:", reg_indices)
 
     #inputs, outputs, masks = vmap(_single)(jnp.arange(num_starts))
