@@ -236,7 +236,7 @@ def self_timed_movement_task(T_start, T_cue, T_wait, T_movement, T, null_trial=F
 
         return inputs, outputs, mask
 
-    # simple solution null_trials
+    # stmt output with null_trials
     inputs = jnp.empty((0, T, 1))
     outputs = jnp.empty((0, T, 1))
     masks = jnp.ones((num_starts, T, 1))
