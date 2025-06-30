@@ -128,5 +128,7 @@ params = init_params(
 # test parameters
 n_seeds = 40
 test_noise_std = 0.2
-test_start_t = jnp.arange(2, 12, 2)
+test_start_offset = 2
+test_start_step = 2
+test_start_t = jnp.arange(2, 12, test_start_step)
 test_null_trials = False
