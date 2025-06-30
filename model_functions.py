@@ -220,7 +220,7 @@ def self_timed_movement_task(T_start, T_cue, T_wait, T_movement, T, null_trial=F
     num_starts = t_start_def.shape[0]
 
     def _single(interval_ind):
-        t_start = T_start[interval_ind - 1]
+        t_start = int(t_start_def[interval_ind] / cs.test_start_step)
         t_cue_end = t_start + T_cue
         t_wait_end = t_cue_end + T_wait
         t_movement_end = t_wait_end + T_movement
