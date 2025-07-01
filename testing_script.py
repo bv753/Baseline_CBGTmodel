@@ -4,7 +4,11 @@ import model_functions as mf
 import plotting_functions as pf
 import training_script as trs
 
-all_ys, all_xs, all_zs = mf.test_model(trs.params_nm)
+#load params_nm
+with open('params_nm.pkl', 'rb') as f:
+    params_nm = pkl.load(f)
+
+all_ys, all_xs, all_zs = mf.test_model(params_nm)
 
 # calculate testing loss
 m_ys = jnp.mean(all_ys, 0)  # mean over random seed iterations
