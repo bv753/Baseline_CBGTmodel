@@ -215,7 +215,7 @@ def self_timed_movement_task(T_start, T_cue, T_wait, T_movement, T, null_trial=F
         t_start_def = jnp.insert(T_start, jr.randint(jr.PRNGKey(0), (len(T_start),), 0, len(T_start)), 0)
     else:
         t_start_def = T_start
-    print("Trials ('0': null-trials):", t_start_def)
+    print("Trials:", t_start_def)
 
     num_starts = t_start_def.shape[0]
 
