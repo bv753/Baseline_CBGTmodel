@@ -355,4 +355,25 @@ def test_model(params_nm):
 def compute_mean_sem(data):
     return jnp.mean(data, axis=0), sem(data, axis=0)
 
+def calculate_testing_loss(all_ys):
+    m_ys = jnp.mean(all_ys, 0)  # mean over random seed iterations
+    tst_inputs, tst_outputs, tst_masks, tst_reg_indices = self_timed_movement_task(cs.test_start_t,
+                                                                                      cs.config['T_cue'],
+                                                                                      cs.config['T_wait'],
+                                                                                      cs.config['T_movement'],
+                                                                                      cs.config['T'],
+                                                                                      null_trial=cs.test_null_trials)
 
+    testing_loss = jnp.sum(((m_ys - tst_outputs) ** 2) * tst_masks) / jnp.sum(tst_masks)
+    return testing_loss, tst_reg_indices
+
+def select_regular_trials(all_ys, all_xs, all_zs, reg_trial_indices):
+    reg_ys = jnp.take(all_ys, reg_trial_indices, 1)
+    reg_zs = jnp.take(all_zs, reg_trial_indices, 1)
+
+    reg_xs_bg = jnp.take(all_xs[0], reg_trial_indices, 1)
+    reg_xs_c = jnp.take(all_xs[1], reg_trial_indices, 1)
+    reg_xs_t = jnp.take(all_xs[2], reg_trial_indices, 1)
+    reg_xs = [reg_xs_bg, reg_xs_c, reg_xs_t]
+
+    return reg_ys, reg_xs, reg_zs

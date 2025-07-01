@@ -1,10 +1,7 @@
-import jax.numpy as jnp
 import pickle as pkl
 
-import config_script as cs
 import model_functions as mf
 import plotting_functions as pf
-import training_script as trs
 
 #load params_nm
 with open('params_nm.pkl', 'rb') as f:
@@ -13,18 +10,11 @@ with open('params_nm.pkl', 'rb') as f:
 all_ys, all_xs, all_zs = mf.test_model(params_nm)
 
 # calculate testing loss
-m_ys = jnp.mean(all_ys, 0)  # mean over random seed iterations
-tst_inputs, tst_outputs, tst_masks, tst_reg_indices = mf.self_timed_movement_task(cs.test_start_t, cs.config['T_cue'], cs.config['T_wait'], cs.config['T_movement'], cs.config['T'], null_trial=cs.test_null_trials)
-testing_loss = jnp.sum(((m_ys - tst_outputs) ** 2) * tst_masks) / jnp.sum(tst_masks)
+testing_loss, tst_reg_indices = mf.calculate_testing_loss(all_ys)
 print("Testing loss:", testing_loss)
 
-reg_ys = jnp.take(all_ys, tst_reg_indices, 1)
-reg_zs = jnp.take(all_zs, tst_reg_indices, 1)
-
-reg_xs_bg = jnp.take(all_xs[0], tst_reg_indices, 1)
-reg_xs_c = jnp.take(all_xs[1], tst_reg_indices, 1)
-reg_xs_t = jnp.take(all_xs[2], tst_reg_indices, 1)
-reg_xs = [reg_xs_bg, reg_xs_c, reg_xs_t]
+# select non-null trials for plotting
+reg_ys, reg_xs, reg_zs = mf.select_regular_trials(all_ys, all_xs, all_zs, tst_reg_indices)
 
 pf.plot_output(reg_ys)
 pf.plot_activity_by_area(reg_xs, reg_zs)
