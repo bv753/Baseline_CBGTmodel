@@ -1,4 +1,6 @@
 import jax.numpy as jnp
+import pickle as pkl
+
 import config_script as cs
 import model_functions as mf
 import plotting_functions as pf
