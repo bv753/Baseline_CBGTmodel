@@ -266,7 +266,7 @@ def get_response_times(all_ys, exclude_nan=True):
             post_cue_activity = all_ys[seed_idx, condition_idx, cue_end:]  # Activity after the cue
             response_idx = jnp.argmax(post_cue_activity[:, 0] > 0.5)  # Find first timestep where y > 0.5
             if post_cue_activity[response_idx, 0] > 0.5:
-                response_times = response_times.at[seed_idx, condition_idx].set((response_idx) * 0.1)
+                response_times = response_times.at[seed_idx, condition_idx].set(response_idx * 0.1)
 
     # Flatten the response_times array, excluding NaN values
     if exclude_nan:
