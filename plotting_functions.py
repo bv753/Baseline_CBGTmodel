@@ -20,7 +20,6 @@ def plot_loss(losses_nm):
 
 def plot_output(all_ys):
     # Plot output activity (mean ± SEM)
-    # plt.close('all')
     fig = plt.figure(figsize=(4, 3))
     colors = plt.cm.coolwarm(jnp.linspace(0, 1, all_ys.shape[1]))
     mean_ys, sem_ys = mf.compute_mean_sem(all_ys)
@@ -40,31 +39,44 @@ def plot_output(all_ys):
     plt.show()
 
 def plot_activity_by_area(all_xs, all_zs):
-    # plt.close('all')
+
+    all_x_bg = all_xs[0]
+    all_x_c = all_xs[1]
+    all_x_t = all_xs[2]
+
     fig = plt.figure(figsize=(8, 6))
     for idx, name in enumerate(['D1', 'D2', 'Cortex', 'Thalamus', 'SNc', 'nm']):
         ax = plt.subplot(2, 3, idx + 1)
         area_activity = jnp.stack(
-            [mf.get_brain_area(name, xs_seed, zs_seed) for xs_seed, zs_seed in zip(all_xs, all_zs)]
+            #[mf.get_brain_area(name, xs_seed, zs_seed) for xs_seed, zs_seed in zip(all_xs, all_zs)]
+            [mf.get_brain_area(name, [x_bg_seed, x_c_seed, x_t_seed], zs_seed) for x_bg_seed, x_c_seed, x_t_seed, zs_seed in zip(all_x_bg, all_x_c, all_x_t, all_zs)]
         )  # shape: (n_seeds, n_conditions, T, N)
-        mean_act, sem_act = mf.compute_mean_sem(jnp.mean(area_activity, axis=3))  # Avg across neurons
-        colors = plt.cm.coolwarm(jnp.linspace(0, 1, mean_act.shape[0]))
-        for i in range(mean_act.shape[0]):
-            ax.plot(mean_act[i], c=colors[i], label=f'Condition {i}')
-            ax.fill_between(
-                jnp.arange(mean_act.shape[1]),
-                mean_act[i] - sem_act[i],
-                mean_act[i] + sem_act[i],
-                color=colors[i],
-                alpha=0.3,
-            )
+
+        #mean_act, sem_act = mf.compute_mean_sem(jnp.mean(area_activity, axis=3))  # Avg across neurons
+        #colors = plt.cm.coolwarm(jnp.linspace(0, 1, mean_act.shape[0]))
+        #for i in range(mean_act.shape[0]):
+        #    ax.plot(mean_act[i], c=colors[i], label=f'Condition {i}')
+        #    ax.fill_between(
+        #        jnp.arange(mean_act.shape[1]),
+        #        mean_act[i] - sem_act[i],
+        #        mean_act[i] + sem_act[i],
+        #        color=colors[i],
+        #        alpha=0.3,
+        #    )
+        avg_area_activity = jnp.mean(area_activity, axis=3) # why axis 0 with shape of 3?
+        #[print(jnp.shape(xseed), jnp.shape(zseed)) for xseed, zseed in zip(all_xs, all_zs)]
+        #print(jnp.shape(area_activity), jnp.shape(avg_area_activity))
+        colors = plt.cm.coolwarm(jnp.linspace(0, 1, avg_area_activity.shape[1]))
+        for seed in range(len(avg_area_activity)):
+            for condition, act in enumerate(avg_area_activity[seed]):
+                ax.plot(act, c=colors[condition])
+
         ax.set_title(f'{name}')
     plt.suptitle('Aligned to trial start')
     plt.tight_layout()
     plt.show()
 
 def plot_cue_align_activity(all_xs, all_zs):
-    # plt.close('all')
     fig = plt.figure(figsize=(8, 6))
     for idx, name in enumerate(['D1', 'D2', 'Cortex', 'Thalamus', 'SNc', 'nm']):
         ax = plt.subplot(2, 3, idx + 1)
@@ -134,9 +146,9 @@ def plot_binned_responses(all_ys, all_xs, all_zs):
     bin_labels = [f'{bin_boundaries[i]}-{bin_boundaries[i+1]}' for i in range(len(bin_boundaries) - 1)]
     
     # Initialize lists for binning the xs, ys, zs data
-    binned_xs = [[[] for n in range(3)] for _ in bin_labels]
-    binned_ys = [[] for _ in bin_labels]
-    binned_zs = [[] for _ in bin_labels]
+    binned_xs = [[[] for n in range(3)] for _ in bin_labels]    # shape: bins * areas * N_responses
+    binned_ys = [[] for _ in bin_labels]                        # shape: bins * N_responses
+    binned_zs = [[] for _ in bin_labels]                        # shape: bins * N_responses
     binned_response_times = [[] for _ in bin_labels]
     
     # Assign each trial to a bin based on its response time
@@ -158,18 +170,17 @@ def plot_binned_responses(all_ys, all_xs, all_zs):
                     binned_zs[bin_idx].append(aligned_zs[condition_idx])
                     binned_response_times[bin_idx].append(response_time)
                     break
-    
+
     # Convert lists to arrays
-    binned_xs = [[jnp.array(bin_data) for bin_data in bin_xs] for bin_xs in binned_xs]
-    binned_ys = [jnp.array(bin_data) for bin_data in binned_ys]
-    binned_zs = [jnp.array(bin_data) for bin_data in binned_zs]
+    binned_xs = [[jnp.array(bin_data) for bin_data in bin_xs] for bin_xs in binned_xs]      # shape: bins * areas * responses * T * N
+    binned_ys = [jnp.array(bin_data) for bin_data in binned_ys]                             # shape: bins * responses * T * N
+    binned_zs = [jnp.array(bin_data) for bin_data in binned_zs]                             # shape: bins * responses * T * N
     
     # Print the shapes
-    print("Shape of binned_xs:", [bin_data.shape for bin_data in binned_xs[0]])
+    print("Shape of binned_xs:", [bin_data.shape for bin_data in binned_xs[0]])             # prints shape of first bin for each area
     print("Shape of binned_ys:", [bin_data.shape for bin_data in binned_ys])
     
     # Plot output activity (mean ± SEM) for each response time bin
-    # plt.close('all')
     fig = plt.figure(figsize=(6, 4))
     
     # Plot the activity for each response time bin
@@ -213,7 +224,6 @@ def plot_binned_responses(all_ys, all_xs, all_zs):
     plt.show()
 
     # Plot activity in each brain area for different response time bins (mean ± SEM) using binned xs and zs
-    # plt.close('all')
     fig = plt.figure(figsize=(12, 8))
     
     # Define the brain areas to plot
@@ -246,7 +256,7 @@ def plot_binned_responses(all_ys, all_xs, all_zs):
                     alpha=0.3,
                     color=plt.cm.coolwarm(bin_idx / len(bin_labels)),
                 )
-    
+
     
         # Add vertical lines for cue, wait, and movement phases
         ymin = jnp.min(mean_act - sem_act)
