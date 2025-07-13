@@ -251,22 +251,32 @@ def self_timed_movement_task(T_start, T_cue, T_wait, T_movement, T, null_trial=F
         inputs = jnp.append(inputs, input, 0)
         outputs = jnp.append(outputs, output, 0)
 
-    reg_indices = jnp.nonzero(t_start_def)[0]
-    print("Regular trial indices:", reg_indices)
+    if cs.plot_trials == 'regular':
+        plot_indices = jnp.nonzero(t_start_def)[0]
+    elif cs.plot_trials == 'null':
+        plot_indices = jnp.where(t_start_def == 0)[0]
+    elif cs.plot_trials == 'all':
+        plot_indices = jnp.arange(t_start_def.shape[0])
+    else:
+        raise ValueError("Value of plot_trials must be 'regular' or 'null'.")
 
     #inputs, outputs, masks = vmap(_single)(jnp.arange(num_starts))
-    return inputs, outputs, masks, reg_indices
+    return inputs, outputs, masks, plot_indices
 
-def get_response_times(all_ys, exclude_nan=True):
-    response_times = jnp.full((cs.n_seeds, all_ys.shape[1]), jnp.nan)  # Default to NaN if no response is detected
+def get_response_times(all_ys, trial_indices, exclude_nan=True):
+    response_times = jnp.full((cs.n_seeds, cs.test_start_t.shape[0]), jnp.nan)  # Default to NaN if no response is detected
+    response_count = 0
 
     for seed_idx in range(cs.n_seeds):
-        for condition_idx in range(all_ys.shape[1]):
-            cue_end = cs.test_start_t[condition_idx] + cs.config['T_cue']
-            post_cue_activity = all_ys[seed_idx, condition_idx, cue_end:]  # Activity after the cue
+        for condition_idx in range(cs.test_start_t.shape[0]):   # for null trials: only works properly for equal number of regular and null trials
+            cue_end = cs.test_start_t[condition_idx] + cs.config['T_cue'] # does not make sense for null_trials
+            post_cue_activity = all_ys[seed_idx, trial_indices[condition_idx], cue_end:]  # Activity after the cue
             response_idx = jnp.argmax(post_cue_activity[:, 0] > 0.5)  # Find first timestep where y > 0.5
             if post_cue_activity[response_idx, 0] > 0.5:
                 response_times = response_times.at[seed_idx, condition_idx].set(response_idx * 0.1)
+                response_count += 1
+
+    print('Responses:', response_count)
 
     # Flatten the response_times array, excluding NaN values
     if exclude_nan:
@@ -357,7 +367,7 @@ def compute_mean_sem(data):
 
 def calculate_testing_loss(all_ys):
     m_ys = jnp.mean(all_ys, 0)  # mean over random seed iterations
-    tst_inputs, tst_outputs, tst_masks, tst_reg_indices = self_timed_movement_task(cs.test_start_t,
+    tst_inputs, tst_outputs, tst_masks, plt_indices = self_timed_movement_task(cs.test_start_t,
                                                                                       cs.config['T_cue'],
                                                                                       cs.config['T_wait'],
                                                                                       cs.config['T_movement'],
@@ -365,15 +375,18 @@ def calculate_testing_loss(all_ys):
                                                                                       null_trial=cs.test_null_trials)
 
     testing_loss = jnp.sum(((m_ys - tst_outputs) ** 2) * tst_masks) / jnp.sum(tst_masks)
-    return testing_loss, tst_reg_indices
+    return testing_loss, plt_indices
 
-def select_regular_trials(all_ys, all_xs, all_zs, reg_trial_indices):
-    reg_ys = jnp.take(all_ys, reg_trial_indices, 1)
-    reg_zs = jnp.take(all_zs, reg_trial_indices, 1)
+def select_trials(all_ys, all_xs, all_zs, trial_indices):
 
-    reg_xs_bg = jnp.take(all_xs[0], reg_trial_indices, 1)
-    reg_xs_c = jnp.take(all_xs[1], reg_trial_indices, 1)
-    reg_xs_t = jnp.take(all_xs[2], reg_trial_indices, 1)
-    reg_xs = [reg_xs_bg, reg_xs_c, reg_xs_t]
+    ys = jnp.take(all_ys, trial_indices, 1)
+    zs = jnp.take(all_zs, trial_indices, 1)
 
-    return reg_ys, reg_xs, reg_zs
+    x_bg = jnp.take(all_xs[0], trial_indices, 1)
+    x_c = jnp.take(all_xs[1], trial_indices, 1)
+    x_t = jnp.take(all_xs[2], trial_indices, 1)
+    xs = [x_bg, x_c, x_t]
+
+    print('Indices of plotted trials:', trial_indices)
+
+    return ys, xs, zs

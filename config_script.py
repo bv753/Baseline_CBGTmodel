@@ -131,4 +131,5 @@ test_noise_std = 0.2
 test_start_offset = 2   # what for?
 test_start_step = 2
 test_start_t = jnp.arange(2, 12, test_start_step)
-test_null_trials = False
+test_null_trials = True
+plot_trials = 'regular'    # 'regular' or 'null' // TODO: more changes for plotting 'all'

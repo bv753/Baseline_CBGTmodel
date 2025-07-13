@@ -34,7 +34,7 @@ def plot_output(all_ys):
             alpha=0.3,
         )
     plt.title(f'Output (mean ± SEM, noise_std={cs.test_noise_std})')
-    plt.legend(title="Condition")
+    #plt.legend(title="Condition")
     plt.tight_layout()
     plt.show()
 
@@ -138,8 +138,8 @@ def plot_response_times(valid_response_times):
     plt.tight_layout()
     plt.show()
 
-def plot_binned_responses(all_ys, all_xs, all_zs):
-    response_times = mf.get_response_times(all_ys, exclude_nan=False)  #  requires unflattened mf.get_response_times() output
+def plot_binned_responses(all_ys, all_xs, all_zs, plt_indices):
+    response_times = mf.get_response_times(all_ys, plt_indices, exclude_nan=False)  #  requires unflattened mf.get_response_times() output
 
     # Define the response time bins (left closed, right open)
     bin_boundaries = [1.6, 2.0, 2.2, 2.4, 2.8]
@@ -158,16 +158,16 @@ def plot_binned_responses(all_ys, all_xs, all_zs):
         aligned_zs = mf.align_to_cue(all_zs[seed_idx], cs.test_start_t, new_T=50)
         aligned_ys = mf.align_to_cue(all_ys[seed_idx], cs.test_start_t, new_T=50)
 
-        for condition_idx in range(all_ys.shape[1]):
+        for condition_idx in range(cs.test_start_t.shape[0]):
             response_time = response_times[seed_idx, condition_idx]
     
             # Find the corresponding bin for the current response time
             for bin_idx, (lower, upper) in enumerate(zip(bin_boundaries[:-1], bin_boundaries[1:])):
                 if lower <= response_time < upper:
                     for i in range(3):
-                        binned_xs[bin_idx][i].append(aligned_xs[i][condition_idx])
-                    binned_ys[bin_idx].append(aligned_ys[condition_idx])
-                    binned_zs[bin_idx].append(aligned_zs[condition_idx])
+                        binned_xs[bin_idx][i].append(aligned_xs[i][plt_indices[condition_idx]])
+                    binned_ys[bin_idx].append(aligned_ys[plt_indices[condition_idx]])
+                    binned_zs[bin_idx].append(aligned_zs[plt_indices[condition_idx]])
                     binned_response_times[bin_idx].append(response_time)
                     break
 
