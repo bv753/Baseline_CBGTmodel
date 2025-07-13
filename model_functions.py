@@ -268,7 +268,7 @@ def get_response_times(all_ys, trial_indices, exclude_nan=True):
     response_count = 0
 
     for seed_idx in range(cs.n_seeds):
-        for condition_idx in range(cs.test_start_t.shape[0]):   # for null trials: only works properly for equal number of regular and null trials
+        for condition_idx in range(cs.test_start_t.shape[0]):   # for null trials: only works properly when number of null-trials equals number of regular trials
             cue_end = cs.test_start_t[condition_idx] + cs.config['T_cue'] # does not make sense for null_trials
             post_cue_activity = all_ys[seed_idx, trial_indices[condition_idx], cue_end:]  # Activity after the cue
             response_idx = jnp.argmax(post_cue_activity[:, 0] > 0.5)  # Find first timestep where y > 0.5

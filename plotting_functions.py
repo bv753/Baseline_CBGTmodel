@@ -142,7 +142,7 @@ def plot_binned_responses(all_ys, all_xs, all_zs, plt_indices):
     response_times = mf.get_response_times(all_ys, plt_indices, exclude_nan=False)  #  requires unflattened mf.get_response_times() output
 
     # Define the response time bins (left closed, right open)
-    bin_boundaries = [1.6, 2.0, 2.2, 2.4, 2.8]
+    bin_boundaries = [1.6, 2.0, 2.2, 2.4, 2.8]  # TODO: make bins adapt to response times
     bin_labels = [f'{bin_boundaries[i]}-{bin_boundaries[i+1]}' for i in range(len(bin_boundaries) - 1)]
     
     # Initialize lists for binning the xs, ys, zs data
