@@ -193,7 +193,7 @@ def fit_nm_rnn(inputs, targets, loss_masks, params, optimizer, x0, z0, num_iters
 
     return best_params, losses
 
-def self_timed_movement_task(T_start, T_cue, T_wait, T_movement, T, null_trial=False):
+def self_timed_movement_task(t_start_def, T_cue, T_wait, T_movement, T):
     """
     Simulate all possible input/output pairs for the self-timed movement task.
 
@@ -209,13 +209,6 @@ def self_timed_movement_task(T_start, T_cue, T_wait, T_movement, T, null_trial=F
     outputs: (num_starts, T, 1), representing the desired movement
     mask: (num_starts, T, 1), the loss mask
     """
-
-    if null_trial is True:
-        # t_start_def = jnp.concatenate((T_start, jnp.zeros(jnp.shape(T_start))), dtype=int)
-        t_start_def = jnp.insert(T_start, jr.randint(jr.PRNGKey(0), (len(T_start),), 0, len(T_start)), 0)
-    else:
-        t_start_def = T_start
-    print("Trials:", t_start_def)
 
     num_starts = t_start_def.shape[0]
 
@@ -267,9 +260,11 @@ def get_response_times(all_ys, trial_indices, exclude_nan=True):
     response_times = jnp.full((cs.n_seeds, cs.test_start_t.shape[0]), jnp.nan)  # Default to NaN if no response is detected
     response_count = 0
 
+    test_start_def = include_null_conditions(cs.test_start_t, null_trial=cs.test_null_trials)
+
     for seed_idx in range(cs.n_seeds):
-        for condition_idx in range(cs.test_start_t.shape[0]):   # for null trials: only works properly when number of null-trials equals number of regular trials
-            cue_end = cs.test_start_t[condition_idx] + cs.config['T_cue'] # does not make sense for null_trials
+        for condition_idx in range(test_start_def.shape[0]):   # for null trials: only works properly when number of null-trials equals number of regular trials
+            cue_end = test_start_def[condition_idx] + cs.config['T_cue'] # does not make sense for null_trials
             post_cue_activity = all_ys[seed_idx, trial_indices[condition_idx], cue_end:]  # Activity after the cue
             response_idx = jnp.argmax(post_cue_activity[:, 0] > 0.5)  # Find first timestep where y > 0.5
             if post_cue_activity[response_idx, 0] > 0.5:
@@ -336,8 +331,7 @@ def sem(data, axis=0):
 
 def test_model(params_nm):
     all_inputs, all_outputs, all_masks, _ = self_timed_movement_task(
-    cs.test_start_t, cs.config['T_cue'], cs.config['T_wait'], cs.config['T_movement'], cs.config['T'], null_trial=cs.test_null_trials
-    )
+    include_null_conditions(cs.test_start_t, null_trial=cs.test_null_trials), cs.config['T_cue'], cs.config['T_wait'], cs.config['T_movement'], cs.config['T'])
 
     # Collect activity for each seed
     all_ys = []
@@ -367,12 +361,11 @@ def compute_mean_sem(data):
 
 def calculate_testing_loss(all_ys):
     m_ys = jnp.mean(all_ys, 0)  # mean over random seed iterations
-    tst_inputs, tst_outputs, tst_masks, plt_indices = self_timed_movement_task(cs.test_start_t,
+    tst_inputs, tst_outputs, tst_masks, plt_indices = self_timed_movement_task(include_null_conditions(cs.test_start_t, null_trial=cs.test_null_trials),
                                                                                       cs.config['T_cue'],
                                                                                       cs.config['T_wait'],
                                                                                       cs.config['T_movement'],
-                                                                                      cs.config['T'],
-                                                                                      null_trial=cs.test_null_trials)
+                                                                                      cs.config['T'])
 
     testing_loss = jnp.sum(((m_ys - tst_outputs) ** 2) * tst_masks) / jnp.sum(tst_masks)
     return testing_loss, plt_indices
@@ -390,3 +383,12 @@ def select_trials(all_ys, all_xs, all_zs, trial_indices):
     print('Indices of plotted trials:', trial_indices)
 
     return ys, xs, zs
+
+def include_null_conditions(T_start, null_trial=False):
+
+    if null_trial is True:
+        t_start_def = jnp.insert(T_start, jr.randint(jr.PRNGKey(0), (len(T_start),), 0, len(T_start)), 0)
+    else:
+        t_start_def = T_start
+
+    return t_start_def

@@ -132,4 +132,4 @@ test_start_offset = 2   # what for?
 test_start_step = 2
 test_start_t = jnp.arange(2, 12, test_start_step)
 test_null_trials = True
-plot_trials = 'regular'    # 'regular' or 'null' // TODO: more changes for plotting 'all'
+plot_trials = 'all'    # 'regular' or 'null' or 'all'

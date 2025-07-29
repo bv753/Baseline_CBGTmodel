@@ -3,7 +3,7 @@ from config_script import *
 import plotting_functions as pf
 import pickle as pkl
 
-all_inputs, all_outputs, all_masks, _ = self_timed_movement_task(config['T_start'], config['T_cue'], config['T_wait'], config['T_movement'], config['T'], null_trial=cs.config['train_null_trials'])
+all_inputs, all_outputs, all_masks, _ = self_timed_movement_task(include_null_conditions(config['T_start'], null_trial=cs.config['train_null_trials']), config['T_cue'], config['T_wait'], config['T_movement'], config['T'])
 
 # train on all params
 params_nm, losses_nm = fit_nm_rnn(all_inputs, all_outputs, all_masks,
