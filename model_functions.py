@@ -360,12 +360,15 @@ def compute_mean_sem(data):
     return jnp.mean(data, axis=0), sem(data, axis=0)
 
 def calculate_testing_loss(all_ys):
+    t_start_def = include_null_conditions(cs.test_start_t, null_trial=cs.test_null_trials)
+    print(t_start_def)
+
     m_ys = jnp.mean(all_ys, 0)  # mean over random seed iterations
-    tst_inputs, tst_outputs, tst_masks, plt_indices = self_timed_movement_task(include_null_conditions(cs.test_start_t, null_trial=cs.test_null_trials),
-                                                                                      cs.config['T_cue'],
-                                                                                      cs.config['T_wait'],
-                                                                                      cs.config['T_movement'],
-                                                                                      cs.config['T'])
+    tst_inputs, tst_outputs, tst_masks, plt_indices = self_timed_movement_task(t_start_def,
+                                                                               cs.config['T_cue'],
+                                                                               cs.config['T_wait'],
+                                                                               cs.config['T_movement'],
+                                                                               cs.config['T'])
 
     testing_loss = jnp.sum(((m_ys - tst_outputs) ** 2) * tst_masks) / jnp.sum(tst_masks)
     return testing_loss, plt_indices
